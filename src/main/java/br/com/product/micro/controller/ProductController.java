@@ -1,11 +1,13 @@
 package br.com.product.micro.controller;
 
 import br.com.product.micro.controller.dto.CreateProductDto;
+import br.com.product.micro.controller.dto.ProductDeletedSuccessfullyDto;
 import br.com.product.micro.controller.dto.ReturnProductDto;
 import br.com.product.micro.controller.dto.UpdateProductDto;
 import br.com.product.micro.domain.Product;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -194,6 +196,50 @@ public class ProductController {
                         "Product updated successfully!",
                         productUpdated
                 )
-        );  
+        );
+    }
+
+    @DeleteMapping("/api/product/{barCode}/delete")
+    @Operation(
+            summary = "Delete a product",
+            description = "Delete all products with a same bar code",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Product deleted successfully!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ProductDeletedSuccessfullyDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Product not found!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error when deleting the product!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"It was not possible to delete the product!\" }"
+                                    )
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<ProductDeletedSuccessfullyDto> deleteProduct(@Parameter(description = "Bar code of product", required = true) @PathVariable String barCode) {
+        Long productBarCode = Long.parseLong(barCode);
+
+        Boolean deleted = productService.deleteProduct(productBarCode);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ProductDeletedSuccessfullyDto("Product deleted successfully!"));
     }
 }
