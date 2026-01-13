@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface IProductService {
     public Product createProduct(Product product);
-    public void deleteProduct(Long code);
+    public Boolean deleteProduct(Long code);
     public Product getProduct(Long code);
     public Page<ReturnAllProductsDto> listProduct(Pageable pageable);
     public Product updateProduct(Product product);

@@ -3,6 +3,7 @@ package br.com.product.micro.service;
 import br.com.product.micro.controller.dto.ReturnAllProductsDto;
 import br.com.product.micro.domain.Product;
 import br.com.product.micro.exception.ErrorCreatingProductException;
+import br.com.product.micro.exception.ErrorDeletingProductException;
 import br.com.product.micro.exception.ProductAlreadyRegisteredException;
 import br.com.product.micro.exception.ProductNotFoundException;
 import br.com.product.micro.repository.IProductRepository;
@@ -31,7 +32,7 @@ public class ProductService implements IProductService {
 
         Product newProduct = productRepository.save(product);
 
-        if(newProduct.getId().isBlank()) {
+        if (newProduct.getId().isBlank()) {
             throw new ErrorCreatingProductException();
         }
 
@@ -39,8 +40,21 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public void deleteProduct(Long code) {
+    public Boolean deleteProduct(Long code) {
+        Optional<Product> product = productRepository.findByBarCode(code);
 
+        if (!product.isPresent()) {
+            throw new ProductNotFoundException();
+        }
+
+        productRepository.deleteById(product.get().getId());
+        Optional<Product> deletedProduct = productRepository.findByBarCode(code);
+
+        if(deletedProduct.isPresent()) {
+            throw new ErrorDeletingProductException();
+        }
+
+        return true;
     }
 
     @Override
@@ -57,7 +71,7 @@ public class ProductService implements IProductService {
     public Product updateProduct(Product product) {
         Optional<Product> existingProduct = productRepository.findByBarCode(product.getBarCode());
 
-        if(!existingProduct.isPresent()) {
+        if (!existingProduct.isPresent()) {
             throw new ProductNotFoundException();
         }
 
