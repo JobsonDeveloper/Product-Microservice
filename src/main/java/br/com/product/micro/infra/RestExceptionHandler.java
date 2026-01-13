@@ -2,6 +2,7 @@ package br.com.product.micro.infra;
 
 import br.com.product.micro.exception.ErrorCreatingProductException;
 import br.com.product.micro.exception.ProductAlreadyRegisteredException;
+import br.com.product.micro.exception.ProductNotFoundException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,5 +57,11 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<DefaultErrorResponse> productAlreadyRegisteredHandler(ProductAlreadyRegisteredException exception) {
         DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(defaultErrorResponse);
+    }
+
+    @ExceptionHandler(ProductNotFoundException.class)
+    private ResponseEntity<DefaultErrorResponse> errorProductNotFound(ProductNotFoundException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
     }
 }
