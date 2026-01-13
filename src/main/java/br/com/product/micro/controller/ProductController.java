@@ -1,7 +1,8 @@
 package br.com.product.micro.controller;
 
 import br.com.product.micro.controller.dto.CreateProductDto;
-import br.com.product.micro.controller.dto.ProductCreatedSuccessfullyDto;
+import br.com.product.micro.controller.dto.ReturnProductDto;
+import br.com.product.micro.controller.dto.UpdateProductDto;
 import br.com.product.micro.domain.Product;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,9 +14,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,7 +40,7 @@ public class ProductController {
                             description = "Product created successfully!",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ProductCreatedSuccessfullyDto.class)
+                                    schema = @Schema(implementation = ReturnProductDto.class)
                             )
                     ),
                     @ApiResponse(
@@ -76,7 +75,91 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<ProductCreatedSuccessfullyDto> createProduct(@Valid @RequestBody CreateProductDto productDto) {
+    public ResponseEntity<ReturnProductDto> createProduct(@Valid @RequestBody CreateProductDto productDto) {
+        String name = productDto.name();
+        Long barCode = productDto.barCode();
+        String brand = productDto.brand();
+        Double weight = productDto.weight();
+        Long quantity = productDto.quantity();
+        Double value = productDto.value();
+        String classification = productDto.classification();
+        String description = productDto.description();
+        LocalDate manufacturingDate = productDto.manufacturing();
+        LocalDate expirationDate = productDto.expiration();
+
+        Product product = Product.builder()
+                .name(name)
+                .barCode(barCode)
+                .brand(brand)
+                .weight(weight)
+                .quantity(quantity)
+                .barCode(barCode)
+                .value(value)
+                .classification(classification)
+                .description(description)
+                .manufacturingDate(manufacturingDate)
+                .expirationDate(expirationDate)
+                .createdAt(null)
+                .build();
+
+        Product newProduct = productService.createProduct(product);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                new ReturnProductDto(
+                        "Product created successfully!",
+                        newProduct
+                )
+        );
+    }
+
+    @PutMapping("/api/product/update")
+    @Transactional
+    @Operation(
+            summary = "Update a product",
+            description = "Update product informations",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Product updated successfully!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ReturnProductDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid data",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"error\": \"Validation failed\", \"errors\": \"[...]\" }"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Product not found",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"Not Found\", \"message\": \"Product not found!\" }"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "It was not possible to update the product",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"It was not possible to update the product!\" }"
+                                    )
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<ReturnProductDto> changeProduct(@Valid @RequestBody UpdateProductDto productDto) {
         String name = productDto.name();
         Long barCode = productDto.barCode();
         String brand = productDto.brand();
@@ -104,13 +187,13 @@ public class ProductController {
                 .createdAt(createdAt)
                 .build();
 
-        Product newProduct = productService.createProduct(product);
+        Product productUpdated = productService.updateProduct(product);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ProductCreatedSuccessfullyDto(
-                        "Product created successfully!",
-                        newProduct
+        return ResponseEntity.status(HttpStatus.OK).body(
+                new ReturnProductDto(
+                        "Product updated successfully!",
+                        productUpdated
                 )
-        );
+        );  
     }
 }
