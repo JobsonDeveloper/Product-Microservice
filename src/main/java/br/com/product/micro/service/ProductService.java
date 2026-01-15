@@ -11,7 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -70,7 +69,22 @@ public class ProductService implements IProductService {
 
     @Override
     public Page<ReturnAllProductsDto> listProduct(Pageable pageable) {
-        return null;
+        return productRepository.findAll(pageable)
+                .map(product -> new ReturnAllProductsDto(
+                        product.getId(),
+                        product.getName(),
+                        product.getBarCode(),
+                        product.getBrand(),
+                        product.getWeight(),
+                        product.getQuantity(),
+                        product.getValue(),
+                        product.getClassification(),
+                        product.getDescription(),
+                        product.getManufacturingDate(),
+                        product.getExpirationDate(),
+                        product.getCreatedAt(),
+                        product.getUpdatedAt()
+                ));
     }
 
     @Override
