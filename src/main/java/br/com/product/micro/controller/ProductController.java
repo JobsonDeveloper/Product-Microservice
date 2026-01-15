@@ -199,7 +199,7 @@ public class ProductController {
         );
     }
 
-    @DeleteMapping("/api/product/{barCode}/delete")
+    @DeleteMapping("/api/product/{barcode}/delete")
     @Operation(
             summary = "Delete a product",
             description = "Delete all products with a same bar code",
@@ -235,11 +235,44 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<ProductDeletedSuccessfullyDto> deleteProduct(@Parameter(description = "Bar code of product", required = true) @PathVariable String barCode) {
-        Long productBarCode = Long.parseLong(barCode);
+    public ResponseEntity<ProductDeletedSuccessfullyDto> deleteProduct(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
+        Long productBarCode = Long.parseLong(barcode);
 
         Boolean deleted = productService.deleteProduct(productBarCode);
 
         return ResponseEntity.status(HttpStatus.OK).body(new ProductDeletedSuccessfullyDto("Product deleted successfully!"));
+    }
+
+    @GetMapping("/api/product/{barcode}/informations")
+    @Operation(
+            summary = "Get product informations",
+            description = "Return all informations of a product by barcode",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Product returned successfully!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ReturnProductDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Product not found!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
+                                    )
+                            )
+                    ),
+            }
+    )
+    public ResponseEntity<ReturnProductDto> getProductInformations(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
+        Long productBarcode = Long.parseLong(barcode);
+        Product product = productService.getProduct(productBarcode);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Product returned successfully!", product));
     }
 }
