@@ -1,9 +1,6 @@
 package br.com.product.micro.controller;
 
-import br.com.product.micro.controller.dto.CreateProductDto;
-import br.com.product.micro.controller.dto.ProductDeletedSuccessfullyDto;
-import br.com.product.micro.controller.dto.ReturnProductDto;
-import br.com.product.micro.controller.dto.UpdateProductDto;
+import br.com.product.micro.controller.dto.*;
 import br.com.product.micro.domain.Product;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -241,5 +240,15 @@ public class ProductController {
         Boolean deleted = productService.deleteProduct(productBarCode);
 
         return ResponseEntity.status(HttpStatus.OK).body(new ProductDeletedSuccessfullyDto("Product deleted successfully!"));
+    }
+
+    @GetMapping("/api/product/list")
+    public ResponseEntity<Page<ReturnAllProductsDto>> listProducts(
+            @RequestParam(defaultValue = "0", required = false, name = "page") int page,
+            @RequestParam(defaultValue = "10", required = false, name = "size") int size
+    ) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<ReturnAllProductsDto> products = productService.listProduct(pageRequest);
+        return ResponseEntity.status(HttpStatus.OK).body(products);
     }
 }
