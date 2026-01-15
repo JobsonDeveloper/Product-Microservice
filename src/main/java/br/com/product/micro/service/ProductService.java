@@ -58,7 +58,13 @@ public class ProductService implements IProductService {
 
     @Override
     public Product getProduct(Long code) {
-        return null;
+        Optional<Product> product = productRepository.findByBarCode(code);
+
+        if(!product.isPresent()) {
+            throw new ProductNotFoundException();
+        }
+
+        return product.get();
     }
 
     @Override

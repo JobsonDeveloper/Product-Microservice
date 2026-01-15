@@ -1,8 +1,11 @@
 package br.com.product.micro.controller.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Schema(description = "Product")
 public record ReturnAllProductsDto(
         String id,
         String name,

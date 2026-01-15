@@ -1,6 +1,7 @@
 package br.com.product.micro.controller;
 
 import br.com.product.micro.controller.dto.*;
+import br.com.product.micro.controller.dto.swagger.PageProductResponseDto;
 import br.com.product.micro.domain.Product;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -198,7 +199,7 @@ public class ProductController {
         );
     }
 
-    @DeleteMapping("/api/product/{barCode}/delete")
+    @DeleteMapping("/api/product/{barcode}/delete")
     @Operation(
             summary = "Delete a product",
             description = "Delete all products with a same bar code",
@@ -234,15 +235,75 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<ProductDeletedSuccessfullyDto> deleteProduct(@Parameter(description = "Bar code of product", required = true) @PathVariable String barCode) {
-        Long productBarCode = Long.parseLong(barCode);
+    public ResponseEntity<ProductDeletedSuccessfullyDto> deleteProduct(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
+        Long productBarCode = Long.parseLong(barcode);
 
         Boolean deleted = productService.deleteProduct(productBarCode);
 
         return ResponseEntity.status(HttpStatus.OK).body(new ProductDeletedSuccessfullyDto("Product deleted successfully!"));
     }
 
+    @GetMapping("/api/product/{barcode}/informations")
+    @Operation(
+            summary = "Get product informations",
+            description = "Return all informations of a product by barcode",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Product returned successfully!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = ReturnProductDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Product not found!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
+                                    )
+                            )
+                    ),
+            }
+    )
+    public ResponseEntity<ReturnProductDto> getProductInformations(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
+        Long productBarcode = Long.parseLong(barcode);
+        Product product = productService.getProduct(productBarcode);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Product returned successfully!", product));
+    }
+
     @GetMapping("/api/product/list")
+    @Operation(
+            summary = "List products",
+            description = "Return a list with all products",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "List returned successfully!",
+                            content = @Content(
+                                    mediaType = "applications/json",
+                                    schema = @Schema(
+                                            implementation = PageProductResponseDto.class
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "It was not possible to create the product",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"Internal server error!\" }"
+                                    )
+                            )
+                    )
+            }
+    )
     public ResponseEntity<Page<ReturnAllProductsDto>> listProducts(
             @RequestParam(defaultValue = "0", required = false, name = "page") int page,
             @RequestParam(defaultValue = "10", required = false, name = "size") int size
