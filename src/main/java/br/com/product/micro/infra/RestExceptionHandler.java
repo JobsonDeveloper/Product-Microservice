@@ -1,9 +1,6 @@
 package br.com.product.micro.infra;
 
-import br.com.product.micro.exception.ErrorCreatingProductException;
-import br.com.product.micro.exception.ErrorDeletingProductException;
-import br.com.product.micro.exception.ProductAlreadyRegisteredException;
-import br.com.product.micro.exception.ProductNotFoundException;
+import br.com.product.micro.exception.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,5 +67,11 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     private ResponseEntity<DefaultErrorResponse> errorErrorDeletingProductHandler(ErrorDeletingProductException exception) {
         DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    }
+
+    @ExceptionHandler(InsufficientProductsException.class)
+    private ResponseEntity<DefaultErrorResponse> insufficientProductsHandler(InsufficientProductsException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(defaultErrorResponse);
     }
 }

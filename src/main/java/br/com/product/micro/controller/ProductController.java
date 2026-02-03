@@ -3,6 +3,7 @@ package br.com.product.micro.controller;
 import br.com.product.micro.controller.dto.*;
 import br.com.product.micro.controller.dto.swagger.PageProductResponseDto;
 import br.com.product.micro.domain.Product;
+import br.com.product.micro.exception.InsufficientProductsException;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -312,4 +313,49 @@ public class ProductController {
         Page<ReturnAllProductsDto> products = productService.listProduct(pageRequest);
         return ResponseEntity.status(HttpStatus.OK).body(products);
     }
+
+    @PutMapping("/api/product/purchase")
+    @Operation(
+            summary = "Purchase product",
+            description = "Purchase a quantity of products",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Product purchased successfully!",
+                            content = @Content(
+                                    mediaType = "applications/json",
+                                    schema = @Schema(
+                                            implementation = ReturnProductDto.class
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Product not found!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "409",
+                            description = "Insufficient products in stock!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"CONFLICT\", \"message\": \"Insufficient products in stock!\" }"
+                                    )
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<ReturnProductDto> purchaseProduct(@Valid @RequestBody PurchaseProductDto productDto) {
+        Product updatedProduct = productService.removeProductQuantity(productDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Products purchased successfully!", updatedProduct));
+    }
 }
+

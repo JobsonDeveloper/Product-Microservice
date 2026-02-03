@@ -1,11 +1,9 @@
 package br.com.product.micro.service;
 
+import br.com.product.micro.controller.dto.PurchaseProductDto;
 import br.com.product.micro.controller.dto.ReturnAllProductsDto;
 import br.com.product.micro.domain.Product;
-import br.com.product.micro.exception.ErrorCreatingProductException;
-import br.com.product.micro.exception.ErrorDeletingProductException;
-import br.com.product.micro.exception.ProductAlreadyRegisteredException;
-import br.com.product.micro.exception.ProductNotFoundException;
+import br.com.product.micro.exception.*;
 import br.com.product.micro.repository.IProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -101,5 +99,22 @@ public class ProductService implements IProductService {
         Product updatedProduct = productRepository.save(product);
 
         return updatedProduct;
+    }
+
+    @Override
+    public Product removeProductQuantity(PurchaseProductDto productDto) {
+        Long barCode = productDto.barCode();
+        Long quantityPurchased = productDto.quantityPurchased();
+
+        Product product = getProduct(barCode);
+        Long quantity = product.getQuantity();
+
+        if((quantity - quantityPurchased) < 0) {
+            throw new InsufficientProductsException();
+        }
+
+        product.setQuantity(quantity - quantityPurchased);
+
+        return updateProduct(product);
     }
 }
