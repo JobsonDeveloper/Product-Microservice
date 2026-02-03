@@ -1,5 +1,6 @@
 package br.com.product.micro.service;
 
+import br.com.product.micro.controller.dto.PurchaseProductDto;
 import br.com.product.micro.controller.dto.ReturnAllProductsDto;
 import br.com.product.micro.domain.Product;
 import org.springframework.data.domain.Page;
@@ -11,4 +12,5 @@ public interface IProductService {
     public Product getProduct(Long code);
     public Page<ReturnAllProductsDto> listProduct(Pageable pageable);
     public Product updateProduct(Product product);
+    public Product removeProductQuantity(PurchaseProductDto productDto);
 }
