@@ -287,7 +287,7 @@ public class ProductController {
                             responseCode = "200",
                             description = "List returned successfully!",
                             content = @Content(
-                                    mediaType = "applications/json",
+                                    mediaType = "application/json",
                                     schema = @Schema(
                                             implementation = PageProductResponseDto.class
                                     )
@@ -314,7 +314,7 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.OK).body(products);
     }
 
-    @PutMapping("/api/product/purchase")
+    @PatchMapping("/api/product/purchase")
     @Operation(
             summary = "Purchase product",
             description = "Purchase a quantity of products",
@@ -354,7 +354,6 @@ public class ProductController {
     )
     public ResponseEntity<ReturnProductDto> purchaseProduct(@Valid @RequestBody PurchaseProductDto productDto) {
         Product updatedProduct = productService.removeProductQuantity(productDto);
-
         return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Products purchased successfully!", updatedProduct));
     }
 }
