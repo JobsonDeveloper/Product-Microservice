@@ -1,7 +1,6 @@
 package br.com.product.micro.controller.dto.swagger;
 
 import br.com.product.micro.controller.dto.ReturnAllProductsDto;
-import br.com.product.micro.controller.dto.ReturnProductDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,4 +18,3 @@ public class PageProductResponseDto {
     private long totalElements;
     private int size;
 }
-
