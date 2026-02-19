@@ -1,5 +1,5 @@
 spring.application.name=product microservice
-server.port=
+server.port=z
 spring.application.zone=America/Recife
 
 # Other microservices port
