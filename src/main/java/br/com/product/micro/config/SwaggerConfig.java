@@ -22,6 +22,5 @@ public class SwaggerConfig {
                                 .url("http://jobsondeveloper.vercel.app")
                         )
                 );
-
     }
 }
