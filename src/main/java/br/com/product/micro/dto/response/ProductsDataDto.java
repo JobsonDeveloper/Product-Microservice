@@ -1,4 +1,4 @@
-package br.com.product.micro.controller.dto;
+package br.com.product.micro.dto.response;
 
 import br.com.product.micro.domain.Product;
 
