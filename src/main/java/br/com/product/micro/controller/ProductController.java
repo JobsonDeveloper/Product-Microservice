@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @Tag(name = "Product", description = "Product operations")
@@ -355,6 +357,45 @@ public class ProductController {
     public ResponseEntity<ReturnProductDto> purchaseProduct(@Valid @RequestBody PurchaseProductDto productDto) {
         Product updatedProduct = productService.removeProductQuantity(productDto);
         return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Products purchased successfully!", updatedProduct));
+    }
+
+    @PostMapping("/api/product/data")
+    @Operation(
+            summary = "Products data",
+            description = "Returns information about more than one product",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Products data returned successfully!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = ProductsDataDto.class
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "It was not possible to get data of products",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"Internal server error!\" }"
+                                    )
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<ProductsDataDto> productsData(@Valid @RequestBody ProductBarCodeListDto productBarCodeListDto) {
+        List<Long> list = productBarCodeListDto.products();
+        List<Product> products = new ArrayList<>();
+
+        list.forEach((Long code) -> {
+            products.add(productService.getProduct(code));
+        });
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ProductsDataDto("Products data returned successfully!", products));
     }
 }
 
