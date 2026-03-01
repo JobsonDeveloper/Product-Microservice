@@ -2,9 +2,9 @@ spring.application.name=product microservice
 server.port=
 spring.application.zone=America/Recife
 
-# Other microservices port
-client.micro.port=
-sales.micro.port=
+# Other microservices url
+client.micro.url=
+sales.micro.url=
 
 #Database
 MONGO_HOST=
