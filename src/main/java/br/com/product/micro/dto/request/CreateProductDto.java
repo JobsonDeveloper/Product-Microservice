@@ -1,10 +1,10 @@
-package br.com.product.micro.controller.dto;
+package br.com.product.micro.dto.request;
 
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
-public record UpdateProductDto(
+public record CreateProductDto(
         @NotNull(message = "The name is required!") @Size(min = 2, message = "The name must be valid!") String name,
         @NotNull(message = "The bar code is required!") @Min(value = 1, message = "The bar code must be valid!") Long barCode,
         @NotNull(message = "The brand is required!") @Size(min = 2, message = "The brand must be valid!") String brand,

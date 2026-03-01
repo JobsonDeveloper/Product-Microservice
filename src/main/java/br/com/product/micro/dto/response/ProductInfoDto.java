@@ -1,8 +1,8 @@
-package br.com.product.micro.controller.dto;
+package br.com.product.micro.dto.response;
 
 import br.com.product.micro.domain.Product;
 
-public record ReturnProductDto(
+public record ProductInfoDto(
         String message,
         Product product
 ) {
