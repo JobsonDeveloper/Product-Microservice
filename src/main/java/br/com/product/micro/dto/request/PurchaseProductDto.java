@@ -1,4 +1,4 @@
-package br.com.product.micro.controller.dto;
+package br.com.product.micro.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

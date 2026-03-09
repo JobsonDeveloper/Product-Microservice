@@ -1,7 +1,6 @@
 package br.com.product.micro.service;
 
-import br.com.product.micro.controller.dto.PurchaseProductDto;
-import br.com.product.micro.controller.dto.ReturnAllProductsDto;
+import br.com.product.micro.dto.request.PurchaseProductDto;
 import br.com.product.micro.domain.Product;
 import br.com.product.micro.exception.*;
 import br.com.product.micro.repository.IProductRepository;
@@ -66,9 +65,9 @@ public class ProductService implements IProductService {
     }
 
     @Override
-    public Page<ReturnAllProductsDto> listProduct(Pageable pageable) {
+    public Page<Product> listProduct(Pageable pageable) {
         return productRepository.findAll(pageable)
-                .map(product -> new ReturnAllProductsDto(
+                .map(product -> new Product(
                         product.getId(),
                         product.getName(),
                         product.getBarCode(),
@@ -87,6 +86,10 @@ public class ProductService implements IProductService {
 
     @Override
     public Product updateProduct(Product product) {
+        if(product.getQuantity() < 0) {
+            throw new InsufficientProductsException("Don't is possible set this product quantity!");
+        }
+
         Optional<Product> existingProduct = productRepository.findByBarCode(product.getBarCode());
 
         if (!existingProduct.isPresent()) {

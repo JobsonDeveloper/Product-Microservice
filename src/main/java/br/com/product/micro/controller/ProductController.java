@@ -1,9 +1,14 @@
 package br.com.product.micro.controller;
 
-import br.com.product.micro.controller.dto.*;
-import br.com.product.micro.controller.dto.swagger.PageProductResponseDto;
+import br.com.product.micro.dto.request.CreateProductDto;
+import br.com.product.micro.dto.request.ProductBarCodeListDto;
+import br.com.product.micro.dto.request.PurchaseProductDto;
+import br.com.product.micro.dto.request.UpdateProductDto;
+import br.com.product.micro.dto.response.ProductDeletedSuccessfullyDto;
+import br.com.product.micro.dto.response.ProductsDataDto;
+import br.com.product.micro.dto.response.ProductInfoDto;
+import br.com.product.micro.dto.swagger.PageProductResponseDto;
 import br.com.product.micro.domain.Product;
-import br.com.product.micro.exception.InsufficientProductsException;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @Tag(name = "Product", description = "Product operations")
@@ -43,7 +50,7 @@ public class ProductController {
                             description = "Product created successfully!",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ReturnProductDto.class)
+                                    schema = @Schema(implementation = ProductInfoDto.class)
                             )
                     ),
                     @ApiResponse(
@@ -78,7 +85,7 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<ReturnProductDto> createProduct(@Valid @RequestBody CreateProductDto productDto) {
+    public ResponseEntity<ProductInfoDto> createProduct(@Valid @RequestBody CreateProductDto productDto) {
         String name = productDto.name();
         Long barCode = productDto.barCode();
         String brand = productDto.brand();
@@ -108,7 +115,7 @@ public class ProductController {
         Product newProduct = productService.createProduct(product);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ReturnProductDto(
+                new ProductInfoDto(
                         "Product created successfully!",
                         newProduct
                 )
@@ -127,7 +134,7 @@ public class ProductController {
                             description = "Product updated successfully!",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ReturnProductDto.class)
+                                    schema = @Schema(implementation = ProductInfoDto.class)
                             )
                     ),
                     @ApiResponse(
@@ -162,7 +169,7 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<ReturnProductDto> changeProduct(@Valid @RequestBody UpdateProductDto productDto) {
+    public ResponseEntity<ProductInfoDto> changeProduct(@Valid @RequestBody UpdateProductDto productDto) {
         String name = productDto.name();
         Long barCode = productDto.barCode();
         String brand = productDto.brand();
@@ -193,7 +200,7 @@ public class ProductController {
         Product productUpdated = productService.updateProduct(product);
 
         return ResponseEntity.status(HttpStatus.OK).body(
-                new ReturnProductDto(
+                new ProductInfoDto(
                         "Product updated successfully!",
                         productUpdated
                 )
@@ -255,7 +262,7 @@ public class ProductController {
                             description = "Product returned successfully!",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(implementation = ReturnProductDto.class)
+                                    schema = @Schema(implementation = ProductInfoDto.class)
                             )
                     ),
                     @ApiResponse(
@@ -270,11 +277,11 @@ public class ProductController {
                     ),
             }
     )
-    public ResponseEntity<ReturnProductDto> getProductInformations(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
+    public ResponseEntity<ProductInfoDto> getProductInformations(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
         Long productBarcode = Long.parseLong(barcode);
         Product product = productService.getProduct(productBarcode);
 
-        return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Product returned successfully!", product));
+        return ResponseEntity.status(HttpStatus.OK).body(new ProductInfoDto("Product returned successfully!", product));
     }
 
     @GetMapping("/api/product/list")
@@ -305,12 +312,12 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<Page<ReturnAllProductsDto>> listProducts(
+    public ResponseEntity<Page<Product>> listProducts(
             @RequestParam(defaultValue = "0", required = false, name = "page") int page,
             @RequestParam(defaultValue = "10", required = false, name = "size") int size
     ) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<ReturnAllProductsDto> products = productService.listProduct(pageRequest);
+        Page<Product> products = productService.listProduct(pageRequest);
         return ResponseEntity.status(HttpStatus.OK).body(products);
     }
 
@@ -326,7 +333,7 @@ public class ProductController {
                             content = @Content(
                                     mediaType = "applications/json",
                                     schema = @Schema(
-                                            implementation = ReturnProductDto.class
+                                            implementation = ProductInfoDto.class
                                     )
                             )
                     ),
@@ -352,9 +359,48 @@ public class ProductController {
                     )
             }
     )
-    public ResponseEntity<ReturnProductDto> purchaseProduct(@Valid @RequestBody PurchaseProductDto productDto) {
+    public ResponseEntity<ProductInfoDto> purchaseProduct(@Valid @RequestBody PurchaseProductDto productDto) {
         Product updatedProduct = productService.removeProductQuantity(productDto);
-        return ResponseEntity.status(HttpStatus.OK).body(new ReturnProductDto("Products purchased successfully!", updatedProduct));
+        return ResponseEntity.status(HttpStatus.OK).body(new ProductInfoDto("Products purchased successfully!", updatedProduct));
+    }
+
+    @PostMapping("/api/product/data")
+    @Operation(
+            summary = "Products data",
+            description = "Returns information about more than one product",
+            tags = {"Product"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Products data returned successfully!",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = ProductsDataDto.class
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "It was not possible to get data of products",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"Internal server error!\" }"
+                                    )
+                            )
+                    )
+            }
+    )
+    public ResponseEntity<ProductsDataDto> productsData(@Valid @RequestBody ProductBarCodeListDto productBarCodeListDto) {
+        List<Long> list = productBarCodeListDto.products();
+        List<Product> products = new ArrayList<>();
+
+        list.forEach((Long code) -> {
+            products.add(productService.getProduct(code));
+        });
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ProductsDataDto("Products data returned successfully!", products));
     }
 }
 

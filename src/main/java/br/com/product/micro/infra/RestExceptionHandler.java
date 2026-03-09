@@ -74,4 +74,10 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(defaultErrorResponse);
     }
+
+    @ExceptionHandler(ErrorUpdatingProductException.class)
+    private ResponseEntity<DefaultErrorResponse> errorUpdatingProductHandler(ErrorUpdatingProductException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    }
 }
