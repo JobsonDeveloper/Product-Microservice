@@ -86,6 +86,10 @@ public class ProductService implements IProductService {
 
     @Override
     public Product updateProduct(Product product) {
+        if(product.getQuantity() < 0) {
+            throw new InsufficientProductsException("Don't is possible set this product quantity!");
+        }
+
         Optional<Product> existingProduct = productRepository.findByBarCode(product.getBarCode());
 
         if (!existingProduct.isPresent()) {
