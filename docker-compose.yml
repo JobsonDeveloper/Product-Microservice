@@ -1,5 +1,7 @@
+name: e-sale
+
 services:
-  product-microservice:
+  product:
     build: .
     ports:
       - "8083:8083"
