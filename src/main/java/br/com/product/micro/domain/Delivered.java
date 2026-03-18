@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -13,8 +14,8 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Data
-@Document(collection = "purchased")
-public class Purchased {
+@Document(collection = "delivered")
+public class Delivered {
     @Id
     private String id;
     private String saleId;

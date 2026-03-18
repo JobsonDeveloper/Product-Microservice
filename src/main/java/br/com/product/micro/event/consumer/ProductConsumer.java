@@ -1,16 +1,11 @@
 package br.com.product.micro.event.consumer;
 
-import br.com.product.micro.domain.Product;
-import br.com.product.micro.domain.Purchased;
-import br.com.product.micro.domain.Reserved;
-import br.com.product.micro.domain.Status;
+import br.com.product.micro.domain.*;
 import br.com.product.micro.event.dto.ItemEventDto;
 import br.com.product.micro.event.dto.PaymentEventDto;
 import br.com.product.micro.event.dto.SaleEventDto;
-import br.com.product.micro.exception.ErrorUpdatingProductException;
-import br.com.product.micro.exception.InsufficientProductsException;
-import br.com.product.micro.exception.ProductNotFoundException;
-import br.com.product.micro.exception.ReservedProductsNotFoundException;
+import br.com.product.micro.exception.*;
+import br.com.product.micro.repository.IDeliveredRepository;
 import br.com.product.micro.repository.IProductRepository;
 import br.com.product.micro.repository.IPurchasedRepository;
 import br.com.product.micro.repository.IReservedRepository;
@@ -20,21 +15,69 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 
 @Service
 public class ProductConsumer {
     private final IProductRepository iProductRepository;
     private final IReservedRepository iReservedRepository;
     private final IPurchasedRepository iPurchasedRepository;
+    private final IDeliveredRepository iDeliveredRepository;
 
     public ProductConsumer(
             IProductRepository iProductRepository,
-            IReservedRepository iReservedRepository, IPurchasedRepository iPurchasedRepository
+            IReservedRepository iReservedRepository, IPurchasedRepository iPurchasedRepository, IDeliveredRepository iDeliveredRepository
     ) {
         this.iProductRepository = iProductRepository;
         this.iReservedRepository = iReservedRepository;
         this.iPurchasedRepository = iPurchasedRepository;
+        this.iDeliveredRepository = iDeliveredRepository;
+    }
+
+    private void saleCreated(SaleEventDto event) {
+        String saleId = event.id();
+        List<ItemEventDto> items = event.items();
+        List<Product> productList = new ArrayList<>();
+
+        items.forEach(product -> {
+            Long barCode = product.barCode();
+            Long subtraendo = product.quantity();
+
+            Optional<Product> storageProduct = iProductRepository.findByBarCode(barCode);
+
+            if (!storageProduct.isPresent()) {
+                throw new ProductNotFoundException();
+            }
+
+            Product productUpdated = updateQuantity(storageProduct.get(), subtraendo);
+
+            storageProduct.get().setQuantity(subtraendo);
+            productList.add(storageProduct.get());
+        });
+
+        Reserved reserved = Reserved.builder()
+                .saleId(saleId)
+                .products(productList)
+                .build();
+        iReservedRepository.save(reserved);
+    }
+
+    private void saleCompleted(SaleEventDto eventDto) {
+        String saleId = eventDto.id();
+        Optional<Purchased> purchasedProducts = iPurchasedRepository.findBySaleId(saleId);
+
+        if (!purchasedProducts.isPresent()) {
+            throw new PurchasedProductsNotFoundException();
+        }
+
+        Purchased purchased = purchasedProducts.get();
+        iPurchasedRepository.deleteById(purchased.getId());
+
+        Delivered delivered = Delivered.builder()
+                .saleId(purchased.getSaleId())
+                .products(purchased.getProducts())
+                .build();
+
+        Delivered newDeliveredSale = iDeliveredRepository.save(delivered);
     }
 
     private Product updateQuantity(Product product, Long subtraendo) {
@@ -59,36 +102,15 @@ public class ProductConsumer {
             groupId = "product-group",
             containerFactory = "saleKafkaListenerFactory"
     )
-    public void updateStatus(SaleEventDto event) {
+    public void saleListener(SaleEventDto event) {
         Status status = event.status();
-        Status created = Status.CREATED;
 
-        if (status.equals(created)) {
-            String saleId = event.id();
-            List<ItemEventDto> items = event.items();
-            List<Product> productList = new ArrayList<>();
+        if (status.equals(Status.CREATED)) {
+            saleCreated(event);
+        }
 
-            items.forEach(product -> {
-                Long barCode = product.barCode();
-                Long subtraendo = product.quantity();
-
-                Optional<Product> storageProduct = iProductRepository.findByBarCode(barCode);
-
-                if (!storageProduct.isPresent()) {
-                    throw new ProductNotFoundException();
-                }
-
-                Product productUpdated = updateQuantity(storageProduct.get(), subtraendo);
-
-                storageProduct.get().setQuantity(subtraendo);
-                productList.add(storageProduct.get());
-            });
-
-            Reserved reserved = Reserved.builder()
-                    .saleId(saleId)
-                    .products(productList)
-                    .build();
-            iReservedRepository.save(reserved);
+        if (status.equals(Status.DELIVERED)) {
+            saleCompleted(event);
         }
     }
 
@@ -97,7 +119,7 @@ public class ProductConsumer {
             groupId = "product-group",
             containerFactory = "paymentKafkaListenerFactory"
     )
-    public void productPurchased(PaymentEventDto paymentEventDto) {
+    public void paymentListener(PaymentEventDto paymentEventDto) {
         Status status = paymentEventDto.status();
 
         if (status.equals(Status.PAID)) {
