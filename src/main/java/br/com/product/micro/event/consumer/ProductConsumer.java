@@ -12,6 +12,7 @@ import br.com.product.micro.repository.IReservedRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -80,21 +81,87 @@ public class ProductConsumer {
         Delivered newDeliveredSale = iDeliveredRepository.save(delivered);
     }
 
-    private Product updateQuantity(Product product, Long subtraendo) {
-        Long newProductQuantity = product.getQuantity() - subtraendo;
+    private void saleCanceled(SaleEventDto eventDto) {
+        String saleId = eventDto.id();
+        Optional<Reserved> reserved = iReservedRepository.findBySaleId(saleId);
 
-        if (newProductQuantity < 0) {
-            throw new InsufficientProductsException();
+        if (reserved.isPresent()) {
+            List<Product> products = reserved.get().getProducts();
+
+            products.forEach(item -> {
+                Optional<Product> storedProduct = iProductRepository.findById(item.getId());
+
+                if (!storedProduct.isPresent()) {
+                    throw new ProductNotFoundException();
+                }
+
+                Long newProductQuantity = storedProduct.get().getQuantity() + item.getQuantity();
+                Product product = Product.builder()
+                        .id(item.getId())
+                        .name(item.getName())
+                        .barCode(item.getBarCode())
+                        .brand(item.getBrand())
+                        .weight(item.getWeight())
+                        .quantity(newProductQuantity)
+                        .value(item.getValue())
+                        .classification(item.getClassification())
+                        .description(item.getDescription())
+                        .manufacturingDate(item.getManufacturingDate())
+                        .expirationDate(item.getExpirationDate())
+                        .createdAt(item.getCreatedAt())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+
+                Product updatedStock = iProductRepository.save(product);
+            });
+
+            iReservedRepository.deleteById(reserved.get().getId());
+            Optional<Reserved> deleted = iReservedRepository.findBySaleId(saleId);
+
+            if (deleted.isPresent()) {
+                throw new ErrorDeletingReservedProductsException();
+            }
+        } else {
+            Optional<Purchased> purchased = iPurchasedRepository.findBySaleId(saleId);
+
+            if (purchased.isPresent()) {
+                List<Product> products = purchased.get().getProducts();
+
+                products.forEach(item -> {
+                    Optional<Product> storedProduct = iProductRepository.findById(item.getId());
+
+                    if (!storedProduct.isPresent()) {
+                        throw new ProductNotFoundException();
+                    }
+
+                    Long newProductQuantity = storedProduct.get().getQuantity() + item.getQuantity();
+                    Product product = Product.builder()
+                            .id(item.getId())
+                            .name(item.getName())
+                            .barCode(item.getBarCode())
+                            .brand(item.getBrand())
+                            .weight(item.getWeight())
+                            .quantity(newProductQuantity)
+                            .value(item.getValue())
+                            .classification(item.getClassification())
+                            .description(item.getDescription())
+                            .manufacturingDate(item.getManufacturingDate())
+                            .expirationDate(item.getExpirationDate())
+                            .createdAt(item.getCreatedAt())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+
+                    Product updatedStock = iProductRepository.save(product);
+                });
+
+                iPurchasedRepository.deleteById(purchased.get().getId());
+                Optional<Purchased> deleted = iPurchasedRepository.findBySaleId(saleId);
+
+                if (deleted.isPresent()) {
+                    throw new ErrorDeletingPurchasedProductsException();
+                }
+            }
         }
-
-        product.setQuantity(newProductQuantity);
-        Product updated = iProductRepository.save(product);
-
-        if (updated.getId() == null) {
-            throw new ErrorUpdatingProductException();
-        }
-
-        return updated;
     }
 
     @KafkaListener(
@@ -111,6 +178,10 @@ public class ProductConsumer {
 
         if (status.equals(Status.DELIVERED)) {
             saleCompleted(event);
+        }
+
+        if (status.equals(Status.CANCELED)) {
+            saleCanceled(event);
         }
     }
 
@@ -142,5 +213,22 @@ public class ProductConsumer {
                 iReservedRepository.delete(reservedProducts.get());
             }
         }
+    }
+
+    private Product updateQuantity(Product product, Long subtraendo) {
+        Long newProductQuantity = product.getQuantity() - subtraendo;
+
+        if (newProductQuantity < 0) {
+            throw new InsufficientProductsException();
+        }
+
+        product.setQuantity(newProductQuantity);
+        Product updated = iProductRepository.save(product);
+
+        if (updated.getId() == null) {
+            throw new ErrorUpdatingProductException();
+        }
+
+        return updated;
     }
 }
