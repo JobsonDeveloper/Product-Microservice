@@ -80,4 +80,28 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
     }
+
+    @ExceptionHandler(ReservedProductsNotFoundException.class)
+    private ResponseEntity<DefaultErrorResponse> reservedProductsNotFoundHandler(ReservedProductsNotFoundException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
+    }
+
+    @ExceptionHandler(PurchasedProductsNotFoundException.class)
+    private ResponseEntity<DefaultErrorResponse> purchasedProductsNotFoundHandler(PurchasedProductsNotFoundException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
+    }
+
+    @ExceptionHandler(ErrorDeletingReservedProductsException.class)
+    private ResponseEntity<DefaultErrorResponse> errorDeletingReservedProductsHandler(ErrorDeletingReservedProductsException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    }
+
+    @ExceptionHandler(ErrorDeletingPurchasedProductsException.class)
+    private ResponseEntity<DefaultErrorResponse> errorDeletingPurchasedProductsHandler(ErrorDeletingPurchasedProductsException exception) {
+        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    }
 }

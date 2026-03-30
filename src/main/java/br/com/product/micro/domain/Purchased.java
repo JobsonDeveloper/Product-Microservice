@@ -1,8 +1,9 @@
 package br.com.product.micro.domain;
 
-
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -12,8 +13,8 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Data
-@Document(collection = "reserved")
-public class Reserved {
+@Document(collection = "purchased")
+public class Purchased {
     @Id
     private String id;
     private String saleId;
