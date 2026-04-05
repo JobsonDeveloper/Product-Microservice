@@ -98,10 +98,4 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
     }
-
-    @ExceptionHandler(ErrorDeletingPurchasedProductsException.class)
-    private ResponseEntity<DefaultErrorResponse> errorDeletingPurchasedProductsHandler(ErrorDeletingPurchasedProductsException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
-    }
 }
