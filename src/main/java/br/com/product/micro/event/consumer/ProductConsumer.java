@@ -4,7 +4,6 @@ import br.com.product.micro.domain.*;
 import br.com.product.micro.event.dto.ItemEventDto;
 import br.com.product.micro.event.dto.SaleEventDto;
 import br.com.product.micro.exception.*;
-import br.com.product.micro.repository.IDeliveredRepository;
 import br.com.product.micro.repository.IProductRepository;
 import br.com.product.micro.repository.IReservedRepository;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,16 +18,13 @@ import java.util.Optional;
 public class ProductConsumer {
     private final IProductRepository iProductRepository;
     private final IReservedRepository iReservedRepository;
-    private final IDeliveredRepository iDeliveredRepository;
 
     public ProductConsumer(
             IProductRepository iProductRepository,
-            IReservedRepository iReservedRepository,
-            IDeliveredRepository iDeliveredRepository
+            IReservedRepository iReservedRepository
     ) {
         this.iProductRepository = iProductRepository;
         this.iReservedRepository = iReservedRepository;
-        this.iDeliveredRepository = iDeliveredRepository;
     }
 
     private void saleCreated(SaleEventDto event) {
@@ -61,21 +57,8 @@ public class ProductConsumer {
 
     private void saleCompleted(SaleEventDto eventDto) {
         String saleId = eventDto.id();
-        Optional<Reserved> purchasedProducts = iReservedRepository.findBySaleId(saleId);
-
-        if (!purchasedProducts.isPresent()) {
-            throw new PurchasedProductsNotFoundException();
-        }
-
-        Reserved purchased = purchasedProducts.get();
-        iReservedRepository.deleteById(purchased.getId());
-
-        Delivered delivered = Delivered.builder()
-                .saleId(purchased.getSaleId())
-                .products(purchased.getProducts())
-                .build();
-
-        iDeliveredRepository.save(delivered);
+        Reserved reserved = iReservedRepository.findBySaleId(saleId).orElseThrow(ReservedProductsNotFoundException::new);
+        iReservedRepository.deleteById(reserved.getId());
     }
 
     private void saleCanceled(SaleEventDto eventDto) {
