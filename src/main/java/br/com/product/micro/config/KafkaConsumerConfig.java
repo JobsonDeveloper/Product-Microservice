@@ -1,5 +1,6 @@
 package br.com.product.micro.config;
 
+import br.com.product.micro.event.dto.DeliveryEventDto;
 import br.com.product.micro.event.dto.PaymentEventDto;
 import br.com.product.micro.event.dto.SaleEventDto;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -76,6 +77,34 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
 
         factory.setConsumerFactory(saleConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, DeliveryEventDto> deliveryConsumerFactory() {
+
+        JsonDeserializer<DeliveryEventDto> deserializer =
+                new JsonDeserializer<>(DeliveryEventDto.class);
+
+        deserializer.addTrustedPackages("*");
+
+        return new DefaultKafkaConsumerFactory<>(
+                Map.of(
+                        ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl,
+                        ConsumerConfig.GROUP_ID_CONFIG, microserviceGroup
+                ),
+                new StringDeserializer(),
+                deserializer
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, DeliveryEventDto> deliveryKafkaListenerFactory() {
+
+        ConcurrentKafkaListenerContainerFactory<String, DeliveryEventDto> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+
+        factory.setConsumerFactory(deliveryConsumerFactory());
         return factory;
     }
 }

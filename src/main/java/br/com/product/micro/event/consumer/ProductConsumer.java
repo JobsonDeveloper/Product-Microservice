@@ -1,6 +1,7 @@
 package br.com.product.micro.event.consumer;
 
 import br.com.product.micro.domain.*;
+import br.com.product.micro.event.dto.DeliveryEventDto;
 import br.com.product.micro.event.dto.ItemEventDto;
 import br.com.product.micro.event.dto.SaleEventDto;
 import br.com.product.micro.exception.*;
@@ -109,13 +110,21 @@ public class ProductConsumer {
             saleCreated(event);
         }
 
-        if (status.equals(Status.DELIVERED)) {
-            saleCompleted(event);
-        }
-
         if (status.equals(Status.CANCELED)) {
             saleCanceled(event);
         }
+    }
+
+    @KafkaListener(
+            topics = "delivery",
+            groupId = "product-group",
+            containerFactory = "deliveryKafkaListenerFactory"
+    )
+    public void deliveryListener(DeliveryEventDto event) {
+        if(!event.status().equals(Status.DELIVERED)) return;
+
+        Reserved reserved = iReservedRepository.findBySaleId(event.saleId()).orElseThrow(ReservedProductsNotFoundException::new);
+        iReservedRepository.deleteById(reserved.getId());
     }
 
     private Product updateQuantity(Product product, Long subtrahend) {
