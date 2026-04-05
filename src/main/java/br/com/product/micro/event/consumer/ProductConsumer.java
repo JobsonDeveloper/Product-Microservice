@@ -2,12 +2,10 @@ package br.com.product.micro.event.consumer;
 
 import br.com.product.micro.domain.*;
 import br.com.product.micro.event.dto.ItemEventDto;
-import br.com.product.micro.event.dto.PaymentEventDto;
 import br.com.product.micro.event.dto.SaleEventDto;
 import br.com.product.micro.exception.*;
 import br.com.product.micro.repository.IDeliveredRepository;
 import br.com.product.micro.repository.IProductRepository;
-import br.com.product.micro.repository.IPurchasedRepository;
 import br.com.product.micro.repository.IReservedRepository;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -21,16 +19,15 @@ import java.util.Optional;
 public class ProductConsumer {
     private final IProductRepository iProductRepository;
     private final IReservedRepository iReservedRepository;
-    private final IPurchasedRepository iPurchasedRepository;
     private final IDeliveredRepository iDeliveredRepository;
 
     public ProductConsumer(
             IProductRepository iProductRepository,
-            IReservedRepository iReservedRepository, IPurchasedRepository iPurchasedRepository, IDeliveredRepository iDeliveredRepository
+            IReservedRepository iReservedRepository,
+            IDeliveredRepository iDeliveredRepository
     ) {
         this.iProductRepository = iProductRepository;
         this.iReservedRepository = iReservedRepository;
-        this.iPurchasedRepository = iPurchasedRepository;
         this.iDeliveredRepository = iDeliveredRepository;
     }
 
@@ -41,7 +38,7 @@ public class ProductConsumer {
 
         items.forEach(product -> {
             Long barCode = product.barCode();
-            Long subtraendo = product.quantity();
+            Long subtrahend = product.quantity();
 
             Optional<Product> storageProduct = iProductRepository.findByBarCode(barCode);
 
@@ -49,9 +46,9 @@ public class ProductConsumer {
                 throw new ProductNotFoundException();
             }
 
-            Product productUpdated = updateQuantity(storageProduct.get(), subtraendo);
+            Product productUpdated = updateQuantity(storageProduct.get(), subtrahend);
 
-            storageProduct.get().setQuantity(subtraendo);
+            storageProduct.get().setQuantity(subtrahend);
             productList.add(storageProduct.get());
         });
 
@@ -64,104 +61,57 @@ public class ProductConsumer {
 
     private void saleCompleted(SaleEventDto eventDto) {
         String saleId = eventDto.id();
-        Optional<Purchased> purchasedProducts = iPurchasedRepository.findBySaleId(saleId);
+        Optional<Reserved> purchasedProducts = iReservedRepository.findBySaleId(saleId);
 
         if (!purchasedProducts.isPresent()) {
             throw new PurchasedProductsNotFoundException();
         }
 
-        Purchased purchased = purchasedProducts.get();
-        iPurchasedRepository.deleteById(purchased.getId());
+        Reserved purchased = purchasedProducts.get();
+        iReservedRepository.deleteById(purchased.getId());
 
         Delivered delivered = Delivered.builder()
                 .saleId(purchased.getSaleId())
                 .products(purchased.getProducts())
                 .build();
 
-        Delivered newDeliveredSale = iDeliveredRepository.save(delivered);
+        iDeliveredRepository.save(delivered);
     }
 
     private void saleCanceled(SaleEventDto eventDto) {
         String saleId = eventDto.id();
-        Optional<Reserved> reserved = iReservedRepository.findBySaleId(saleId);
+        Reserved reserved = iReservedRepository.findBySaleId(saleId).orElseThrow(ProductNotFoundException::new);
 
-        if (reserved.isPresent()) {
-            List<Product> products = reserved.get().getProducts();
+        List<Product> products = reserved.getProducts();
 
-            products.forEach(item -> {
-                Optional<Product> storedProduct = iProductRepository.findById(item.getId());
+        products.forEach(item -> {
+            Optional<Product> storedProduct = iProductRepository.findById(item.getId());
 
-                if (!storedProduct.isPresent()) {
-                    throw new ProductNotFoundException();
-                }
-
-                Long newProductQuantity = storedProduct.get().getQuantity() + item.getQuantity();
-                Product product = Product.builder()
-                        .id(item.getId())
-                        .name(item.getName())
-                        .barCode(item.getBarCode())
-                        .brand(item.getBrand())
-                        .weight(item.getWeight())
-                        .quantity(newProductQuantity)
-                        .value(item.getValue())
-                        .classification(item.getClassification())
-                        .description(item.getDescription())
-                        .manufacturingDate(item.getManufacturingDate())
-                        .expirationDate(item.getExpirationDate())
-                        .createdAt(item.getCreatedAt())
-                        .updatedAt(LocalDateTime.now())
-                        .build();
-
-                Product updatedStock = iProductRepository.save(product);
-            });
-
-            iReservedRepository.deleteById(reserved.get().getId());
-            Optional<Reserved> deleted = iReservedRepository.findBySaleId(saleId);
-
-            if (deleted.isPresent()) {
-                throw new ErrorDeletingReservedProductsException();
+            if (!storedProduct.isPresent()) {
+                throw new ProductNotFoundException();
             }
-        } else {
-            Optional<Purchased> purchased = iPurchasedRepository.findBySaleId(saleId);
 
-            if (purchased.isPresent()) {
-                List<Product> products = purchased.get().getProducts();
+            Long newProductQuantity = storedProduct.get().getQuantity() + item.getQuantity();
+            Product product = Product.builder()
+                    .id(item.getId())
+                    .name(item.getName())
+                    .barCode(item.getBarCode())
+                    .brand(item.getBrand())
+                    .weight(item.getWeight())
+                    .quantity(newProductQuantity)
+                    .value(item.getValue())
+                    .classification(item.getClassification())
+                    .description(item.getDescription())
+                    .manufacturingDate(item.getManufacturingDate())
+                    .expirationDate(item.getExpirationDate())
+                    .createdAt(item.getCreatedAt())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
 
-                products.forEach(item -> {
-                    Optional<Product> storedProduct = iProductRepository.findById(item.getId());
+            iProductRepository.save(product);
+        });
 
-                    if (!storedProduct.isPresent()) {
-                        throw new ProductNotFoundException();
-                    }
-
-                    Long newProductQuantity = storedProduct.get().getQuantity() + item.getQuantity();
-                    Product product = Product.builder()
-                            .id(item.getId())
-                            .name(item.getName())
-                            .barCode(item.getBarCode())
-                            .brand(item.getBrand())
-                            .weight(item.getWeight())
-                            .quantity(newProductQuantity)
-                            .value(item.getValue())
-                            .classification(item.getClassification())
-                            .description(item.getDescription())
-                            .manufacturingDate(item.getManufacturingDate())
-                            .expirationDate(item.getExpirationDate())
-                            .createdAt(item.getCreatedAt())
-                            .updatedAt(LocalDateTime.now())
-                            .build();
-
-                    Product updatedStock = iProductRepository.save(product);
-                });
-
-                iPurchasedRepository.deleteById(purchased.get().getId());
-                Optional<Purchased> deleted = iPurchasedRepository.findBySaleId(saleId);
-
-                if (deleted.isPresent()) {
-                    throw new ErrorDeletingPurchasedProductsException();
-                }
-            }
-        }
+        iReservedRepository.deleteById(reserved.getId());
     }
 
     @KafkaListener(
@@ -185,38 +135,8 @@ public class ProductConsumer {
         }
     }
 
-    @KafkaListener(
-            topics = "payment",
-            groupId = "product-group",
-            containerFactory = "paymentKafkaListenerFactory"
-    )
-    public void paymentListener(PaymentEventDto paymentEventDto) {
-        Status status = paymentEventDto.status();
-
-        if (status.equals(Status.PAID)) {
-            String saleId = paymentEventDto.saleId();
-
-            Optional<Reserved> reservedProducts = iReservedRepository.findBySaleId(saleId);
-
-            if (!reservedProducts.isPresent()) {
-                throw new ReservedProductsNotFoundException();
-            }
-
-            Purchased purchasedProduct = Purchased.builder()
-                    .saleId(saleId)
-                    .products(reservedProducts.get().getProducts())
-                    .build();
-
-            Purchased newPurchasedProduct = iPurchasedRepository.save(purchasedProduct);
-
-            if (newPurchasedProduct.getId() != null) {
-                iReservedRepository.delete(reservedProducts.get());
-            }
-        }
-    }
-
-    private Product updateQuantity(Product product, Long subtraendo) {
-        Long newProductQuantity = product.getQuantity() - subtraendo;
+    private Product updateQuantity(Product product, Long subtrahend) {
+        Long newProductQuantity = product.getQuantity() - subtrahend;
 
         if (newProductQuantity < 0) {
             throw new InsufficientProductsException();

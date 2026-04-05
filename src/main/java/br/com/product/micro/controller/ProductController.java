@@ -277,7 +277,7 @@ public class ProductController {
                     ),
             }
     )
-    public ResponseEntity<ProductInfoDto> getProductInformations(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
+    public ResponseEntity<ProductInfoDto> getProductInformation(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
         Long productBarcode = Long.parseLong(barcode);
         Product product = productService.getProduct(productBarcode);
 
