@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface IProductRepository extends MongoRepository<Product, String> {
     public Optional<Product> findByBarCode(Long code);
+    public boolean existsByBarCode(Long code);
 }

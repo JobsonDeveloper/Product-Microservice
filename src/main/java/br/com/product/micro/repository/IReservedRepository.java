@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface IReservedRepository extends MongoRepository<Reserved, String> {
     public Optional<Reserved> findBySaleId(String saleId);
+    public Optional<Reserved> deleteBySaleId(String saleId);
 }
