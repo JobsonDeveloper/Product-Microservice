@@ -53,22 +53,23 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(new DefaultErrorResponse(status, message));
     }
 
-    @ExceptionHandler(ProductAlreadyRegisteredException.class)
-    private ResponseEntity<DefaultErrorResponse> productAlreadyRegisteredHandler(ProductAlreadyRegisteredException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(defaultErrorResponse);
+    @ExceptionHandler({
+            ProductAlreadyRegisteredException.class,
+            InsufficientProductsException.class
+    })
+    private ResponseEntity<DefaultErrorResponse> conflictErrorHandler(RuntimeException exception) {
+        return this.responseConstructor(
+                HttpStatus.CONFLICT,
+                exception.getMessage()
+        );
     }
 
     @ExceptionHandler(ProductNotFoundException.class)
-    private ResponseEntity<DefaultErrorResponse> errorProductNotFoundHandler(ProductNotFoundException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
-    }
-
-    @ExceptionHandler(InsufficientProductsException.class)
-    private ResponseEntity<DefaultErrorResponse> insufficientProductsHandler(InsufficientProductsException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(defaultErrorResponse);
+    private ResponseEntity<DefaultErrorResponse> recordNotFoundHandler(RuntimeException exception) {
+        return this.responseConstructor(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage()
+        );
     }
 
     //    ----  System errors  ----
