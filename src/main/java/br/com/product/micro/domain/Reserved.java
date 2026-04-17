@@ -4,6 +4,7 @@ package br.com.product.micro.domain;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -16,6 +17,9 @@ import java.util.List;
 public class Reserved {
     @Id
     private String id;
+
+    @Indexed(unique = true)
     private String saleId;
+
     private List<Product> products;
 }

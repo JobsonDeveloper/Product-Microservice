@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ProductConsumer {
@@ -37,45 +36,34 @@ public class ProductConsumer {
             Long barCode = product.barCode();
             Long subtrahend = product.quantity();
 
-            Optional<Product> storageProduct = iProductRepository.findByBarCode(barCode);
+            Product storageProduct = iProductRepository.findByBarCode(barCode).orElseThrow(ProductNotFoundException::new);
 
-            if (!storageProduct.isPresent()) {
-                throw new ProductNotFoundException();
-            }
-
-            Product productUpdated = updateQuantity(storageProduct.get(), subtrahend);
-
-            storageProduct.get().setQuantity(subtrahend);
-            productList.add(storageProduct.get());
+            updateQuantity(storageProduct, subtrahend);
+            storageProduct.setQuantity(subtrahend);
+            productList.add(storageProduct);
         });
 
         Reserved reserved = Reserved.builder()
                 .saleId(saleId)
                 .products(productList)
                 .build();
+
         iReservedRepository.save(reserved);
     }
 
     private void saleCompleted(SaleEventDto eventDto) {
         String saleId = eventDto.id();
-        Reserved reserved = iReservedRepository.findBySaleId(saleId).orElseThrow(ReservedProductsNotFoundException::new);
-        iReservedRepository.deleteById(reserved.getId());
+        iReservedRepository.deleteBySaleId(saleId);
     }
 
     private void saleCanceled(SaleEventDto eventDto) {
         String saleId = eventDto.id();
         Reserved reserved = iReservedRepository.findBySaleId(saleId).orElseThrow(ProductNotFoundException::new);
-
         List<Product> products = reserved.getProducts();
 
         products.forEach(item -> {
-            Optional<Product> storedProduct = iProductRepository.findById(item.getId());
-
-            if (!storedProduct.isPresent()) {
-                throw new ProductNotFoundException();
-            }
-
-            Long newProductQuantity = storedProduct.get().getQuantity() + item.getQuantity();
+            Product storedProduct = iProductRepository.findById(item.getId()).orElseThrow(ProductNotFoundException::new);
+            Long newProductQuantity = storedProduct.getQuantity() + item.getQuantity();
             Product product = Product.builder()
                     .id(item.getId())
                     .name(item.getName())
@@ -100,47 +88,33 @@ public class ProductConsumer {
 
     @KafkaListener(
             topics = "sale",
-            groupId = "product-group",
+            groupId = "${spring.kafka.consumer.group-id}",
             containerFactory = "saleKafkaListenerFactory"
     )
     public void saleListener(SaleEventDto event) {
         Status status = event.status();
 
-        if (status.equals(Status.CREATED)) {
-            saleCreated(event);
-        }
-
-        if (status.equals(Status.CANCELED)) {
-            saleCanceled(event);
-        }
+        if (status.equals(Status.CREATED)) saleCreated(event);
+        if (status.equals(Status.CANCELED)) saleCanceled(event);
     }
 
     @KafkaListener(
             topics = "delivery",
-            groupId = "product-group",
+            groupId = "${spring.kafka.consumer.group-id}",
             containerFactory = "deliveryKafkaListenerFactory"
     )
     public void deliveryListener(DeliveryEventDto event) {
-        if(!event.status().equals(Status.DELIVERED)) return;
-
-        Reserved reserved = iReservedRepository.findBySaleId(event.saleId()).orElseThrow(ReservedProductsNotFoundException::new);
-        iReservedRepository.deleteById(reserved.getId());
+        if (!event.status().equals(Status.DELIVERED)) return;
+        iReservedRepository.deleteBySaleId(event.saleId());
     }
 
-    private Product updateQuantity(Product product, Long subtrahend) {
-        Long newProductQuantity = product.getQuantity() - subtrahend;
+    private void updateQuantity(Product product, Long subtrahend) {
+        long newProductQuantity = product.getQuantity() - subtrahend;
 
-        if (newProductQuantity < 0) {
-            throw new InsufficientProductsException();
-        }
+        if (newProductQuantity < 0) throw new InsufficientProductsException();
 
         product.setQuantity(newProductQuantity);
-        Product updated = iProductRepository.save(product);
 
-        if (updated.getId() == null) {
-            throw new ErrorUpdatingProductException();
-        }
-
-        return updated;
+        iProductRepository.save(product);
     }
 }

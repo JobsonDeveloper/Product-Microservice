@@ -245,9 +245,7 @@ public class ProductController {
     )
     public ResponseEntity<ProductDeletedSuccessfullyDto> deleteProduct(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
         Long productBarCode = Long.parseLong(barcode);
-
-        Boolean deleted = productService.deleteProduct(productBarCode);
-
+        productService.deleteProduct(productBarCode);
         return ResponseEntity.status(HttpStatus.OK).body(new ProductDeletedSuccessfullyDto("Product deleted successfully!"));
     }
 

@@ -1,6 +1,9 @@
 package br.com.product.micro.infra;
 
 import br.com.product.micro.exception.*;
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,10 +48,9 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
-    @ExceptionHandler(ErrorCreatingProductException.class)
-    private ResponseEntity<DefaultErrorResponse> errorCreatingProductHandler(ErrorCreatingProductException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    private ResponseEntity<DefaultErrorResponse> responseConstructor(HttpStatus status, String message) {
+        return ResponseEntity.status(status)
+                .body(new DefaultErrorResponse(status, message));
     }
 
     @ExceptionHandler(ProductAlreadyRegisteredException.class)
@@ -63,39 +65,38 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
     }
 
-    @ExceptionHandler(ErrorDeletingProductException.class)
-    private ResponseEntity<DefaultErrorResponse> errorErrorDeletingProductHandler(ErrorDeletingProductException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
-    }
-
     @ExceptionHandler(InsufficientProductsException.class)
     private ResponseEntity<DefaultErrorResponse> insufficientProductsHandler(InsufficientProductsException exception) {
         DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.CONFLICT, exception.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(defaultErrorResponse);
     }
 
-    @ExceptionHandler(ErrorUpdatingProductException.class)
-    private ResponseEntity<DefaultErrorResponse> errorUpdatingProductHandler(ErrorUpdatingProductException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    //    ----  System errors  ----
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    private ResponseEntity<DefaultErrorResponse> systemDuplicityOfDataHandler(RuntimeException exception) {
+        return this.responseConstructor(
+                HttpStatus.CONFLICT,
+                "This record has already been registered!"
+        );
     }
 
-    @ExceptionHandler(ReservedProductsNotFoundException.class)
-    private ResponseEntity<DefaultErrorResponse> reservedProductsNotFoundHandler(ReservedProductsNotFoundException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
+    @ExceptionHandler({
+            MongoException.class,
+            DataAccessException.class
+    })
+    private ResponseEntity<DefaultErrorResponse> systemDatabaseAccessErrorHandler(RuntimeException exception) {
+        return this.responseConstructor(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Error connecting to the database!"
+        );
     }
 
-    @ExceptionHandler(PurchasedProductsNotFoundException.class)
-    private ResponseEntity<DefaultErrorResponse> purchasedProductsNotFoundHandler(PurchasedProductsNotFoundException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.NOT_FOUND, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(defaultErrorResponse);
-    }
-
-    @ExceptionHandler(ErrorDeletingReservedProductsException.class)
-    private ResponseEntity<DefaultErrorResponse> errorDeletingReservedProductsHandler(ErrorDeletingReservedProductsException exception) {
-        DefaultErrorResponse defaultErrorResponse = new DefaultErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(defaultErrorResponse);
+    @ExceptionHandler(Exception.class)
+    private ResponseEntity<DefaultErrorResponse> unmappedErrorsHandler(Exception exception) {
+        return this.responseConstructor(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Unexpected internal error!"
+        );
     }
 }

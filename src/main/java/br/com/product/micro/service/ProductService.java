@@ -8,8 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 public class ProductService implements IProductService {
     private final IProductRepository productRepository;
@@ -20,48 +18,21 @@ public class ProductService implements IProductService {
 
     @Override
     public Product createProduct(Product product) {
-        Optional<Product> existingProduct = productRepository.findByBarCode(product.getBarCode());
+        boolean existingProduct = productRepository.existsByBarCode(product.getBarCode());
+        if (existingProduct) throw new ProductAlreadyRegisteredException();
 
-        if (existingProduct.isPresent()) {
-            throw new ProductAlreadyRegisteredException();
-        }
-
-        Product newProduct = productRepository.save(product);
-
-        if (newProduct.getId().isBlank()) {
-            throw new ErrorCreatingProductException();
-        }
-
-        return newProduct;
+        return productRepository.save(product);
     }
 
     @Override
-    public Boolean deleteProduct(Long code) {
-        Optional<Product> product = productRepository.findByBarCode(code);
-
-        if (!product.isPresent()) {
-            throw new ProductNotFoundException();
-        }
-
-        productRepository.deleteById(product.get().getId());
-        Optional<Product> deletedProduct = productRepository.findByBarCode(code);
-
-        if(deletedProduct.isPresent()) {
-            throw new ErrorDeletingProductException();
-        }
-
-        return true;
+    public void deleteProduct(Long code) {
+        Product product = productRepository.findByBarCode(code).orElseThrow(ProductNotFoundException::new);
+        productRepository.deleteById(product.getId());
     }
 
     @Override
     public Product getProduct(Long code) {
-        Optional<Product> product = productRepository.findByBarCode(code);
-
-        if(!product.isPresent()) {
-            throw new ProductNotFoundException();
-        }
-
-        return product.get();
+        return productRepository.findByBarCode(code).orElseThrow(ProductNotFoundException::new);
     }
 
     @Override
@@ -86,35 +57,23 @@ public class ProductService implements IProductService {
 
     @Override
     public Product updateProduct(Product product) {
-        if(product.getQuantity() < 0) {
-            throw new InsufficientProductsException("Don't is possible set this product quantity!");
-        }
+        if(product.getQuantity() < 0) throw new InsufficientProductsException("Don't is possible set this product quantity!");
 
-        Optional<Product> existingProduct = productRepository.findByBarCode(product.getBarCode());
+        Product existingProduct = productRepository.findByBarCode(product.getBarCode()).orElseThrow(ProductNotFoundException::new);
+        product.setId(existingProduct.getId());
+        product.setCreatedAt(existingProduct.getCreatedAt());
 
-        if (!existingProduct.isPresent()) {
-            throw new ProductNotFoundException();
-        }
-
-        product.setId(existingProduct.get().getId());
-        product.setCreatedAt(existingProduct.get().getCreatedAt());
-
-        Product updatedProduct = productRepository.save(product);
-
-        return updatedProduct;
+        return productRepository.save(product);
     }
 
     @Override
     public Product removeProductQuantity(PurchaseProductDto productDto) {
         Long barCode = productDto.barCode();
         Long quantityPurchased = productDto.quantityPurchased();
-
         Product product = getProduct(barCode);
         Long quantity = product.getQuantity();
 
-        if((quantity - quantityPurchased) < 0) {
-            throw new InsufficientProductsException();
-        }
+        if((quantity - quantityPurchased) < 0) throw new InsufficientProductsException();
 
         product.setQuantity(quantity - quantityPurchased);
 
