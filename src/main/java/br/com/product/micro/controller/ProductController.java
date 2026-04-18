@@ -7,8 +7,10 @@ import br.com.product.micro.dto.request.UpdateProductDto;
 import br.com.product.micro.dto.response.ProductDeletedSuccessfullyDto;
 import br.com.product.micro.dto.response.ProductsDataDto;
 import br.com.product.micro.dto.response.ProductInfoDto;
+import br.com.product.micro.dto.swagger.DefaultErrorResponseDto;
 import br.com.product.micro.dto.swagger.PageProductResponseDto;
 import br.com.product.micro.domain.Product;
+import br.com.product.micro.dto.swagger.validation.fields.FieldsErrorDto;
 import br.com.product.micro.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,7 +49,7 @@ public class ProductController {
             responses = {
                     @ApiResponse(
                             responseCode = "201",
-                            description = "Product created successfully!",
+                            description = "Product created successfully",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = ProductInfoDto.class)
@@ -55,12 +57,10 @@ public class ProductController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid data",
+                            description = "Inconsistent request fields",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"error\": \"Validation failed\", \"errors\": \"[...]\" }"
-                                    )
+                                    schema = @Schema(implementation = FieldsErrorDto.class)
                             )
                     ),
                     @ApiResponse(
@@ -68,19 +68,23 @@ public class ProductController {
                             description = "Product already registered",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"CONFLICT\", \"message\": \"Product already registered!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "It was not possible to create the product",
+                            description = "Internal Server Error",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"It was not possible to create the product!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     )
             }
@@ -126,12 +130,12 @@ public class ProductController {
     @Transactional
     @Operation(
             summary = "Update a product",
-            description = "Update product informations",
+            description = "Update product information",
             tags = {"Product"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Product updated successfully!",
+                            description = "Product updated successfully",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = ProductInfoDto.class)
@@ -139,12 +143,10 @@ public class ProductController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid data",
+                            description = "Inconsistent request fields",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"error\": \"Validation failed\", \"errors\": \"[...]\" }"
-                                    )
+                                    schema = @Schema(implementation = FieldsErrorDto.class)
                             )
                     ),
                     @ApiResponse(
@@ -152,19 +154,23 @@ public class ProductController {
                             description = "Product not found",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"Not Found\", \"message\": \"Product not found!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "It was not possible to update the product",
+                            description = "Internal Server Error",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"It was not possible to update the product!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     )
             }
@@ -215,7 +221,7 @@ public class ProductController {
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Product deleted successfully!",
+                            description = "Product deleted successfully",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = ProductDeletedSuccessfullyDto.class)
@@ -223,22 +229,26 @@ public class ProductController {
                     ),
                     @ApiResponse(
                             responseCode = "404",
-                            description = "Product not found!",
+                            description = "Product not found",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "Error when deleting the product!",
+                            description = "Internal Server Error",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"It was not possible to delete the product!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     )
             }
@@ -249,15 +259,15 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.OK).body(new ProductDeletedSuccessfullyDto("Product deleted successfully!"));
     }
 
-    @GetMapping("/api/product/{barcode}/informations")
+    @GetMapping("/api/product/{barcode}/information")
     @Operation(
-            summary = "Get product informations",
-            description = "Return all informations of a product by barcode",
+            summary = "Get product information",
+            description = "Return all information of a product by barcode",
             tags = {"Product"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Product returned successfully!",
+                            description = "Product returned successfully",
                             content = @Content(
                                     mediaType = "application/json",
                                     schema = @Schema(implementation = ProductInfoDto.class)
@@ -265,14 +275,28 @@ public class ProductController {
                     ),
                     @ApiResponse(
                             responseCode = "404",
-                            description = "Product not found!",
+                            description = "Product not found",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Internal Server Error",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    )
             }
     )
     public ResponseEntity<ProductInfoDto> getProductInformation(@Parameter(description = "Product barcode", required = true) @PathVariable String barcode) {
@@ -285,27 +309,31 @@ public class ProductController {
     @GetMapping("/api/product/list")
     @Operation(
             summary = "List products",
-            description = "Return a list with all products",
+            description = "Return a list of products",
             tags = {"Product"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "List returned successfully!",
+                            description = "List returned successfully",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            implementation = PageProductResponseDto.class
-                                    )
+                                    schema = @Schema(implementation = PageProductResponseDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "It was not possible to create the product",
+                            description = "Internal Server Error",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"Internal server error!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     )
             }
@@ -321,38 +349,48 @@ public class ProductController {
 
     @PatchMapping("/api/product/purchase")
     @Operation(
-            summary = "Purchase product",
-            description = "Purchase a quantity of products",
+            summary = "Remove a quantity of product",
+            description = "Remove a quantity of product",
             tags = {"Product"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Product purchased successfully!",
+                            description = "Product purchased successfully",
                             content = @Content(
                                     mediaType = "applications/json",
-                                    schema = @Schema(
-                                            implementation = ProductInfoDto.class
-                                    )
+                                    schema = @Schema(implementation = ProductInfoDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Product not found!",
+                            description = "Product not found",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"NOT_FOUND\", \"message\": \"Product not found!\" }"
-                                    )
+                                    schema = @Schema(implementation = FieldsErrorDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "409",
-                            description = "Insufficient products in stock!",
+                            description = "Insufficient products in stock",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"CONFLICT\", \"message\": \"Insufficient products in stock!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Internal Server Error",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     )
             }
@@ -364,28 +402,40 @@ public class ProductController {
 
     @PostMapping("/api/product/data")
     @Operation(
-            summary = "Products data",
-            description = "Returns information about more than one product",
+            summary = "Get products information by barcode",
+            description = "Returns information for various products by barcode",
             tags = {"Product"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Products data returned successfully!",
+                            description = "Products information returned successfully",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            implementation = ProductsDataDto.class
-                                    )
+                                    schema = @Schema(implementation = ProductsDataDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Product not found",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "It was not possible to get data of products",
+                            description = "Internal Server Error",
                             content = @Content(
                                     mediaType = "application/json",
-                                    schema = @Schema(
-                                            example = "{ \"status\": \"INTERNAL_SERVER_ERROR\", \"message\": \"Internal server error!\" }"
-                                    )
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Service Unavailable",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = DefaultErrorResponseDto.class)
                             )
                     )
             }
@@ -395,7 +445,8 @@ public class ProductController {
         List<Product> products = new ArrayList<>();
 
         list.forEach((Long code) -> {
-            products.add(productService.getProduct(code));
+            Product product = productService.getProduct(code);
+            products.add(product);
         });
 
         return ResponseEntity.status(HttpStatus.OK).body(new ProductsDataDto("Products data returned successfully!", products));
